@@ -30,7 +30,7 @@ export class AttachAddon implements ITerminalAddon {
     this._socket = null;
   }
 
-  public attach(socket: WebSocket, bidirectional: boolean, buffered: boolean): void {
+  public attach(socket: WebSocket, bidirectional?: boolean, buffered?: boolean): void {
     bidirectional = (typeof bidirectional === 'undefined') ? true : bidirectional;
     this._socket = socket;
     this._buffered = buffered;

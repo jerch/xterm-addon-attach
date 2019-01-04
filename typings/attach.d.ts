@@ -14,5 +14,5 @@ export interface ITerminalAddon {
 export class AttachAddon implements ITerminalAddon {
   constructor(terminal: Terminal);
   public dispose(): void;
-  public attach(socket: WebSocket, bidirectional: boolean, buffered: boolean): void;
+  public attach(socket: WebSocket, bidirectional?: boolean, buffered?: boolean): void;
 }
