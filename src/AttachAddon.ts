@@ -13,7 +13,7 @@ export interface ITerminalAddon {
   dispose(): void;
 }
 
-export class WebLinksAddon implements ITerminalAddon {
+export class AttachAddon implements ITerminalAddon {
   private _socket: WebSocket;
   private _textDecoder: TextDecoder = new TextDecoder();
   private _buffered: boolean;
