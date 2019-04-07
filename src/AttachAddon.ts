@@ -5,8 +5,7 @@
  * Implements the attach method, that attaches the terminal to a WebSocket stream.
  */
 
-import { Terminal, IDisposable, ILinkMatcherOptions } from 'xterm';
-import { IAttachAddonTerminal } from './Interfaces';
+import { Terminal, IDisposable } from 'xterm';
 
 // TODO: This is temporary, link to xterm when the new version is published
 export interface ITerminalAddon {

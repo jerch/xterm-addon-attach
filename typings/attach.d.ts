@@ -8,11 +8,12 @@ import { Terminal, ILinkMatcherOptions } from 'xterm';
 
 // TODO: This is temporary, link to xterm when the new version is published
 export interface ITerminalAddon {
+  activate(terminal: Terminal): void;
   dispose(): void;
 }
 
 export class AttachAddon implements ITerminalAddon {
-  constructor(terminal: Terminal);
+  public activate(terminal: Terminal): void;
   public dispose(): void;
   public attach(socket: WebSocket, bidirectional?: boolean, buffered?: boolean): void;
 }
