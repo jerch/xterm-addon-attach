@@ -10,6 +10,7 @@ import { IAttachAddonTerminal } from './Interfaces';
 
 // TODO: This is temporary, link to xterm when the new version is published
 export interface ITerminalAddon {
+  activate(terminal: Terminal): void;
   dispose(): void;
 }
 
@@ -19,10 +20,11 @@ export class AttachAddon implements ITerminalAddon {
   private _buffered: boolean;
   private _attachSocketBuffer: string;
   private _disposables: IDisposable[] = [];
-
+  private _terminal: Terminal;
   private _dataListener: (data: string) => void;
 
-  constructor(private _terminal: Terminal) {
+  public activate(terminal: Terminal): void {
+    this._terminal = terminal;
   }
 
   public dispose(): void {
