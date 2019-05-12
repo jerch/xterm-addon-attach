@@ -22,7 +22,7 @@ export class AttachAddon implements ITerminalAddon {
 
   constructor(public socket: WebSocket, options?: IAttachOptions) {
     this._bidirectional = options && options.bidirectional;
-    this._utf8 = options && options.utf8;
+    this._utf8 = options && options.inputUtf8;
     if (this._utf8) {
       this.socket.binaryType = 'arraybuffer';
     }

@@ -15,7 +15,7 @@ export interface ITerminalAddon {
 export interface IAttachOptions {
   bidirectional?: boolean,
   buffered?: boolean,
-  utf8?: boolean
+  inputUtf8?: boolean
 }
 
 export class AttachAddon implements ITerminalAddon {
