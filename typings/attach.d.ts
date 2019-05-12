@@ -19,10 +19,7 @@ export interface IAttachOptions {
 }
 
 export class AttachAddon implements ITerminalAddon {
+  new(socket: WebSocket, options?: IAttachOptions): AttachAddon;
   public activate(terminal: Terminal): void;
   public dispose(): void;
-}
-
-interface IAttachAddonConstructor {
-  new (socket: WebSocket, options?: IAttachOptions): AttachAddon;
 }
