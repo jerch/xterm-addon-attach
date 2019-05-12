@@ -21,7 +21,7 @@ export class AttachAddon implements ITerminalAddon {
   private _dataListener: (data: string) => void;
 
   constructor(public socket: WebSocket, options?: IAttachOptions) {
-    this._bidirectional = options && options.bidirectional;
+    this._bidirectional = (options && options.bidirectional === false) ? false : true;
     this._utf8 = options && options.inputUtf8;
     if (this._utf8) {
       this.socket.binaryType = 'arraybuffer';
