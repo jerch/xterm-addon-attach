@@ -6,6 +6,7 @@
  */
 
 import { Terminal, IDisposable } from 'xterm';
+import { IAttachOptions } from '../typings/attach';
 
 // TODO: This is temporary, link to xterm when the new version is published
 export interface ITerminalAddon {
@@ -14,96 +15,50 @@ export interface ITerminalAddon {
 }
 
 export class AttachAddon implements ITerminalAddon {
-  private _socket: WebSocket;
-  private _textDecoder: TextDecoder = new TextDecoder();
-  private _buffered: boolean;
-  private _attachSocketBuffer: string;
+  private _bidirectional: boolean;
+  private _utf8: boolean;
   private _disposables: IDisposable[] = [];
-  private _terminal: Terminal;
   private _dataListener: (data: string) => void;
 
+  constructor(public socket: WebSocket, options?: IAttachOptions) {
+    this._bidirectional = options && options.bidirectional;
+    this._utf8 = options && options.utf8;
+    if (this._utf8) {
+      this.socket.binaryType = 'arraybuffer';
+    }
+  }
+
   public activate(terminal: Terminal): void {
-    this._terminal = terminal;
+    if (this._utf8) {
+      this.socket.binaryType = 'arraybuffer';
+      this._disposables.push(addSocketListener(this.socket, 'message',
+        (ev: MessageEvent) => (terminal as any).writeUtf8(new Uint8Array(ev.data))));
+    } else {
+      this._disposables.push(addSocketListener(this.socket, 'message',
+        (ev: MessageEvent) => (terminal as any).write(ev.data)));
+    }
+
+    if (this._bidirectional) {
+      this._dataListener = data => this._sendData(data);
+      this._disposables.push(terminal.addDisposableListener('data', this._dataListener));
+    }
+
+    this._disposables.push(addSocketListener(this.socket, 'close', () => this.dispose()));
+    this._disposables.push(addSocketListener(this.socket, 'error', () => this.dispose()));
   }
 
   public dispose(): void {
     this._disposables.forEach(d => d.dispose());
-    this._socket = null;
-  }
-
-  public attach(socket: WebSocket, bidirectional?: boolean, buffered?: boolean): void {
-    bidirectional = (typeof bidirectional === 'undefined') ? true : bidirectional;
-    this._socket = socket;
-    this._buffered = buffered;
-
-    this._disposables.push(addSocketListener(socket, 'message', (ev: MessageEvent) => this._getMessage(ev)));
-
-    if (bidirectional) {
-      this._dataListener = data => this._sendData(data);
-      this._disposables.push(this._terminal.addDisposableListener('data', this._dataListener));
-    }
-
-    this._disposables.push(addSocketListener(socket, 'close', () => this.dispose()));
-    this._disposables.push(addSocketListener(socket, 'error', () => this.dispose()));
-  }
-
-  private _flushBuffer(): void {
-    this._terminal.write(this._attachSocketBuffer);
-    this._attachSocketBuffer = null;
-  }
-
-  private _pushToBuffer(data: string): void {
-    if (this._attachSocketBuffer) {
-      this._attachSocketBuffer += data;
-    } else {
-      this._attachSocketBuffer = data;
-      setTimeout(this._flushBuffer, 10);
-    }
-  }
-
-  private _getMessage(ev: MessageEvent): void {
-    let str: string;
-
-    if (typeof ev.data === 'object') {
-      if (ev.data instanceof ArrayBuffer) {
-        str = this._textDecoder.decode(ev.data);
-        this._displayData(str);
-      } else {
-        const fileReader = new FileReader();
-
-        fileReader.addEventListener('load', () => {
-          str = this._textDecoder.decode(fileReader.result as any);
-          this._displayData(str);
-        });
-        fileReader.readAsArrayBuffer(ev.data);
-      }
-    } else if (typeof ev.data === 'string') {
-      this._displayData(ev.data);
-    } else {
-      throw Error(`Cannot handle "${typeof ev.data}" websocket message.`);
-    }
-  }
-
-  /**
-   * Push data to buffer or write it in the terminal.
-   * This is used as a callback for FileReader.onload.
-   *
-   * @param str String decoded by FileReader.
-   * @param data The data of the EventMessage.
-   */
-  private _displayData(str?: string, data?: string): void {
-    if (this._buffered) {
-      this._pushToBuffer(str || data);
-    } else {
-      this._terminal.write(str || data);
-    }
+    this.socket = null;
   }
 
   private _sendData(data: string): void {
-    if (this._socket.readyState !== 1) {
+    // TODO: do something better than just swallowing
+    // the data if the socket is not in a working condition
+    if (this.socket.readyState !== 1) {
       return;
     }
-    this._socket.send(data);
+    this.socket.send(data);
   }
 }
 
