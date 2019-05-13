@@ -1,12 +1,18 @@
 /**
- * Copyright (c) 2014 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2014, 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  *
  * Implements the attach method, that attaches the terminal to a WebSocket stream.
  */
 
 import { Terminal, IDisposable } from 'xterm';
-import { IAttachOptions } from '../typings/attach';
+
+
+interface IAttachOptions {
+  bidirectional?: boolean,
+  inputUtf8?: boolean
+}
+
 
 // TODO: This is temporary, link to xterm when the new version is published
 export interface ITerminalAddon {
@@ -14,51 +20,55 @@ export interface ITerminalAddon {
   dispose(): void;
 }
 
+// TODO: To be removed once UTF8 PR is in xterm.js package.
+interface INewTerminal extends Terminal {
+  writeUtf8(data: Uint8Array): void;
+}
+
+
 export class AttachAddon implements ITerminalAddon {
+  private _socket: WebSocket;
   private _bidirectional: boolean;
   private _utf8: boolean;
   private _disposables: IDisposable[] = [];
-  private _dataListener: (data: string) => void;
 
-  constructor(public socket: WebSocket, options?: IAttachOptions) {
+  constructor(socket: WebSocket, options?: IAttachOptions) {
+    this._socket = socket;
+    // always set binary type to arraybuffer, we do not handle blobs
+    this._socket.binaryType = 'arraybuffer';
     this._bidirectional = (options && options.bidirectional === false) ? false : true;
     this._utf8 = options && options.inputUtf8;
-    if (this._utf8) {
-      this.socket.binaryType = 'arraybuffer';
-    }
   }
 
   public activate(terminal: Terminal): void {
     if (this._utf8) {
-      this.socket.binaryType = 'arraybuffer';
-      this._disposables.push(addSocketListener(this.socket, 'message',
-        (ev: MessageEvent) => (terminal as any).writeUtf8(new Uint8Array(ev.data))));
+      this._disposables.push(addSocketListener(this._socket, 'message',
+        (ev: MessageEvent) => (terminal as INewTerminal).writeUtf8(new Uint8Array(ev.data as ArrayBuffer))));
     } else {
-      this._disposables.push(addSocketListener(this.socket, 'message',
-        (ev: MessageEvent) => (terminal as any).write(ev.data)));
+      this._disposables.push(addSocketListener(this._socket, 'message',
+        (ev: MessageEvent) => (terminal as INewTerminal).write(ev.data as string)));
     }
 
     if (this._bidirectional) {
-      this._dataListener = data => this._sendData(data);
-      this._disposables.push(terminal.addDisposableListener('data', this._dataListener));
+      this._disposables.push(terminal.addDisposableListener('data', data => this._sendData(data)));
     }
 
-    this._disposables.push(addSocketListener(this.socket, 'close', () => this.dispose()));
-    this._disposables.push(addSocketListener(this.socket, 'error', () => this.dispose()));
+    this._disposables.push(addSocketListener(this._socket, 'close', () => this.dispose()));
+    this._disposables.push(addSocketListener(this._socket, 'error', () => this.dispose()));
   }
 
   public dispose(): void {
     this._disposables.forEach(d => d.dispose());
-    this.socket = null;
+    this._socket = null;
   }
 
   private _sendData(data: string): void {
     // TODO: do something better than just swallowing
     // the data if the socket is not in a working condition
-    if (this.socket.readyState !== 1) {
+    if (this._socket.readyState !== 1) {
       return;
     }
-    this.socket.send(data);
+    this._socket.send(data);
   }
 }
 
