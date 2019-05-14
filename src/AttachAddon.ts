@@ -9,8 +9,8 @@ import { Terminal, IDisposable } from 'xterm';
 
 
 interface IAttachOptions {
-  bidirectional?: boolean,
-  inputUtf8?: boolean
+  bidirectional?: boolean;
+  inputUtf8?: boolean;
 }
 
 
@@ -37,16 +37,16 @@ export class AttachAddon implements ITerminalAddon {
     // always set binary type to arraybuffer, we do not handle blobs
     this._socket.binaryType = 'arraybuffer';
     this._bidirectional = (options && options.bidirectional === false) ? false : true;
-    this._utf8 = options && options.inputUtf8;
+    this._utf8 = !!(options && options.inputUtf8);
   }
 
   public activate(terminal: Terminal): void {
     if (this._utf8) {
       this._disposables.push(addSocketListener(this._socket, 'message',
-        (ev: MessageEvent) => (terminal as INewTerminal).writeUtf8(new Uint8Array(ev.data as ArrayBuffer))));
+        (ev: MessageEvent | Event | CloseEvent) => (terminal as INewTerminal).writeUtf8(new Uint8Array((ev as any).data as ArrayBuffer))));
     } else {
       this._disposables.push(addSocketListener(this._socket, 'message',
-        (ev: MessageEvent) => (terminal as INewTerminal).write(ev.data as string)));
+        (ev: MessageEvent | Event | CloseEvent) => (terminal as INewTerminal).write((ev as any).data as string)));
     }
 
     if (this._bidirectional) {
@@ -59,7 +59,6 @@ export class AttachAddon implements ITerminalAddon {
 
   public dispose(): void {
     this._disposables.forEach(d => d.dispose());
-    this._socket = null;
   }
 
   private _sendData(data: string): void {
@@ -72,7 +71,7 @@ export class AttachAddon implements ITerminalAddon {
   }
 }
 
-function addSocketListener(socket: WebSocket, type: string, handler: (this: WebSocket, ev: Event) => any): IDisposable {
+function addSocketListener(socket: WebSocket, type: string, handler: (this: WebSocket, ev: MessageEvent | Event | CloseEvent) => any): IDisposable {
   socket.addEventListener(type, handler);
   return {
     dispose: () => {
@@ -81,7 +80,6 @@ function addSocketListener(socket: WebSocket, type: string, handler: (this: WebS
         return;
       }
       socket.removeEventListener(type, handler);
-      handler = null;
     }
   };
 }

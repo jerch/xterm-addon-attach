@@ -5,10 +5,12 @@
     "lib": [
       "dom",
       "es5",
+      "es2015"
     ],
-    "rootDir": "src",
-    "outDir": "lib",
+    "rootDir": ".",
+    "outDir": "./dist",
     "sourceMap": true,
-    "removeComments": true
+    "removeComments": true,
+    "strict": true
   }
 }
