@@ -27,8 +27,8 @@ describe('API Integration Tests', () => {
     await page.setViewport({ width, height });
   });
 
-  after(() => {
-    browser.close();
+  after(async () => {
+    await browser.close();
   });
 
   beforeEach(async function(): Promise<any> {
