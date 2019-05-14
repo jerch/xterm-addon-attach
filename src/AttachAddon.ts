@@ -66,7 +66,7 @@ export class AttachAddon implements ITerminalAddon {
         this._socket.send(READY_MSG);
       } else if (this._socket.readyState === 0) {
         // still connecting, thus wait for open event
-        this._disposables.push(addSocketListener(this._socket, 'open', () => this._socket.send(READY_MSG)));
+        this._disposables.push(addSocketListener(this._socket, 'open', () => this._socket.send(READY_MSG), {once: true}));
       }
     }
   }
@@ -85,8 +85,8 @@ export class AttachAddon implements ITerminalAddon {
   }
 }
 
-function addSocketListener(socket: WebSocket, type: string, handler: (this: WebSocket, ev: MessageEvent | Event | CloseEvent) => any): IDisposable {
-  socket.addEventListener(type, handler);
+function addSocketListener(socket: WebSocket, type: string, handler: (this: WebSocket, ev: MessageEvent | Event | CloseEvent) => any, options?: AddEventListenerOptions): IDisposable {
+  socket.addEventListener(type, handler, options);
   return {
     dispose: () => {
       if (!handler) {
