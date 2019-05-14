@@ -9,8 +9,8 @@
   "types": "typings/attach.d.ts",
   "license": "MIT",
   "scripts": {
-    "watch": "tsc -w",
-    "prepublish": "tsc",
+    "watch": "tsc -w -p src",
+    "prepublish": "tsc -p src",
     "lint": "tslint -p src"
   },
   "devDependencies": {
