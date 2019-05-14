@@ -67,7 +67,7 @@ describe('API Integration Tests', () => {
     const waitForReadyAndSend = new Promise(
       resolve => server.on('connection',
         socket => {
-          socket.on('message',msg => {
+          socket.on('message', msg => {
             assert.equal(msg, '#READY#');
             socket.send('foo');
             resolve();
