@@ -9,8 +9,8 @@ import { Terminal, IDisposable } from 'xterm';
 
 
 interface IAttachOptions {
-  bidirectional?: boolean,
-  inputUtf8?: boolean
+  bidirectional?: boolean;
+  inputUtf8?: boolean;
 }
 
 

@@ -6,8 +6,8 @@
       "dom",
       "es5",
     ],
-    "rootDir": "src",
-    "outDir": "lib",
+    "rootDir": ".",
+    "outDir": "../lib",
     "sourceMap": true,
     "removeComments": true
   }
