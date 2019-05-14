@@ -16,7 +16,7 @@ export interface IAttachOptions {
   /**
    * Whether input should be written to the backend. Defaults to `true`.
    */
-  bidirectional?: boolean,
+  bidirectional?: boolean;
   
   /**
    * Whether to use UTF8 binary transport for incoming messages. Defaults to `false`.
@@ -24,7 +24,15 @@ export interface IAttachOptions {
    *       Always send string messages from the backend if this options is false,
    *       otherwise always binary UTF8 data.
    */
-  inputUtf8?: boolean
+  inputUtf8?: boolean;
+
+  /**
+   * Whether to send a '#READY#' message upon activation.
+   * If set the server shall not send data before it has seen this message.
+   * Always set this to avoid losing the first messages.
+   * Since this options needs additional preparations on server side it defaults to `false`.
+   */
+  sendReady?: boolean;
 }
 
 export class AttachAddon implements ITerminalAddon {

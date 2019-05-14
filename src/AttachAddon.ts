@@ -7,10 +7,12 @@
 
 import { Terminal, IDisposable } from 'xterm';
 
+const READY_MSG = '#READY#';
 
 interface IAttachOptions {
   bidirectional?: boolean;
   inputUtf8?: boolean;
+  sendReady?: boolean;
 }
 
 
@@ -30,6 +32,7 @@ export class AttachAddon implements ITerminalAddon {
   private _socket: WebSocket;
   private _bidirectional: boolean;
   private _utf8: boolean;
+  private _sendReady: boolean;
   private _disposables: IDisposable[] = [];
 
   constructor(socket: WebSocket, options?: IAttachOptions) {
@@ -38,6 +41,7 @@ export class AttachAddon implements ITerminalAddon {
     this._socket.binaryType = 'arraybuffer';
     this._bidirectional = (options && options.bidirectional === false) ? false : true;
     this._utf8 = !!(options && options.inputUtf8);
+    this._sendReady = !!(options && options.sendReady);
   }
 
   public activate(terminal: Terminal): void {
@@ -55,6 +59,16 @@ export class AttachAddon implements ITerminalAddon {
 
     this._disposables.push(addSocketListener(this._socket, 'close', () => this.dispose()));
     this._disposables.push(addSocketListener(this._socket, 'error', () => this.dispose()));
+
+    if (this._sendReady) {
+      if (this._socket.readyState === 1) {
+        // connection already opened, send right away
+        this._socket.send(READY_MSG);
+      } else if (this._socket.readyState === 0) {
+        // still connecting, thus wait for open event
+        this._disposables.push(addSocketListener(this._socket, 'open', () => this._socket.send(READY_MSG)));
+      }
+    }
   }
 
   public dispose(): void {

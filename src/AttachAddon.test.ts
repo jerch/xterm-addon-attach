@@ -58,6 +58,58 @@ describe('API Integration Tests', () => {
     assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
     server.close();
   });
+
+  it('wait for ready - string', async function(): Promise<any> {
+    this.timeout(20000);
+    await openTerminal({ rendererType: 'dom' });
+    const port = 8080;
+    const server = new WebSocket.Server({ port });
+    const waitForReadyAndSend = new Promise(
+      resolve => server.on('connection',
+        socket => {
+          socket.on('message',msg => {
+            assert.equal(msg, '#READY#');
+            socket.send('foo');
+            resolve();
+          });
+        }
+      )
+    );
+    await page.evaluate(`const ws = new WebSocket('ws://localhost:${port}')`);
+    // let some time pass
+    await new Promise(resolve => setTimeout(() => resolve(), 200));
+    await page.evaluate(`const attachAddon = new window.AttachAddon(ws, {sendReady: true})`);
+    await page.evaluate(`window.term.loadAddon(attachAddon)`);
+    await waitForReadyAndSend;
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
+    server.close();
+  });
+
+  it('wait for ready - utf8', async function(): Promise<any> {
+    this.timeout(20000);
+    await openTerminal({ rendererType: 'dom' });
+    const port = 8080;
+    const server = new WebSocket.Server({ port });
+    const data = new Uint8Array([102, 111, 111]);
+    const waitForReadyAndSend = new Promise(
+      resolve => server.on('connection',
+        socket => {
+          socket.on('message', msg => {
+            assert.equal(msg, '#READY#');
+            socket.send(data);
+            resolve();
+          });
+        })
+    );
+    await page.evaluate(`const ws = new WebSocket('ws://localhost:${port}')`);
+    // let some time pass
+    await new Promise(resolve => setTimeout(() => resolve(), 200));
+    await page.evaluate(`const attachAddon = new window.AttachAddon(ws, {sendReady: true, inputUtf8: true})`);
+    await page.evaluate(`window.term.loadAddon(attachAddon)`);
+    await waitForReadyAndSend;
+    assert.equal(await page.evaluate(`window.term.buffer.getLine(0).translateToString(true)`), 'foo');
+    server.close();
+  });
 });
 
 // async function testHostName(hostname: string): Promise<void> {
